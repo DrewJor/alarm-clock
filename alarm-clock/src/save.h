@@ -21,14 +21,16 @@ struct SaveBackend {
   bool (*write)(const DateTime &standard);
   bool (*format)(bool fmt24h);
 };
+
 // Cooperative owner: submit never writes. Each service call performs at most
 // one group operation. IDs are monotonic within a boot; stale IDs never write.
 class SaveOwner {
- public:
+public:
   SaveStatus submit(const SaveRequest &request);
   SaveResult query(uint32_t id) const;
   void service(const Settings &settings, const SaveBackend &backend);
- private:
+
+private:
   SaveRequest request;
   SaveResult result;
   uint32_t high_water = 0;

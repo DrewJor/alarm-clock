@@ -1,6 +1,5 @@
 # Remaining work — 2026-09-20
 
-The original checklist is preserved in `docs/REMAINING-original.md`.
 Firmware and supporting documentation have been completed; the remaining work
 requires physical access or team decisions. Do not equate a successful build
 or framebuffer capture with an electrically finished alarm clock.
@@ -28,7 +27,7 @@ or framebuffer capture with an electrically finished alarm clock.
    separated ranges. The current 500/1600 thresholds are provisional.
 4. **Resolve the buzzer load.** The diagram connects the reported low-resistance
    electromagnetic buzzer directly to GPIO13. GPIO_DRIVE_CAP_0 is not proof of
-   safe current or inductive protection. Output is enabled at the user's explicit request for testing
+   safe current or inductive protection. Output is enabled for testing
    (`BUZZ_OUTPUT_ENABLED=true`); this does not certify the load. Identify and
    verify an appropriate drive circuit or GPIO-compatible transducer. This may require
    revisiting the kit-only/no-extra-parts restriction.

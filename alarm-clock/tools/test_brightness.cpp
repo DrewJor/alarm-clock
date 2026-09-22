@@ -15,14 +15,16 @@ int main() {
   for (int raw = 0; raw <= 4095; ++raw) {
     uint8_t next = brightness_from_light(raw, level);
     assert(next >= level && next <= 3);
-    level = next; seen |= 1u << level;
+    level = next;
+    seen |= 1u << level;
   }
   assert(seen == 14 && level == 3);
   seen = 0;
   for (int raw = 4095; raw >= 0; --raw) {
     uint8_t next = brightness_from_light(raw, level);
     assert(next <= level && next >= 1);
-    level = next; seen |= 1u << level;
+    level = next;
+    seen |= 1u << level;
   }
   assert(seen == 14 && level == 1);
   for (int delta = -LDR_HYSTERESIS; delta <= LDR_HYSTERESIS; ++delta) {

@@ -295,7 +295,7 @@ LOW during the earlier baseline. These observations alone do not establish
 physical switch operation. One startup I²C transmit error appeared in the final
 log; both buses subsequently responded and RTC status remained valid.
 
-**Later update:** the user explicitly requested buzzer output enabled for testing.
+**Later update:** buzzer output was enabled for testing.
 `BUZZ_OUTPUT_ENABLED=true` replaces the misleading VERIFIED switch name. The
 results below describe the preceding build with sound disabled; the new build
 and boot logs are `artifacts/buzzer-enabled-build.log` and

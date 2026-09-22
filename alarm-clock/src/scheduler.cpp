@@ -8,9 +8,11 @@ int8_t clock_offset(const DateTime &t, const Settings &s) {
   return s.dst_auto ? (us_dst_active(t) ? 1 : 0) : s.dst_manual_hr;
 }
 bool dst_adjustment(const DateTime &t, const Settings &s, int8_t direction, int8_t &offset) {
-  if (direction != -1 && direction != 1) return false;
+  if (direction != -1 && direction != 1)
+    return false;
   int adjusted = int(clock_offset(t, s)) + direction;
-  if (adjusted < INT8_MIN || adjusted > INT8_MAX) return false;
+  if (adjusted < INT8_MIN || adjusted > INT8_MAX)
+    return false;
   offset = int8_t(adjusted);
   return true;
 }
@@ -35,18 +37,23 @@ uint8_t AlarmSchedule::poll(const DateTime &standard, const Settings &s) {
   uint16_t minute = local.hour() * 60 + local.minute();
   // Catch a skipped hour only across a continuous clock tick, never an
   // arbitrary manual clock jump or reconnection after an outage.
-  bool spring = have_previous && stamp >= previous_standard &&
-                stamp - previous_standard <= 5 && off > previous_offset;
+  bool spring = have_previous && stamp >= previous_standard && stamp - previous_standard <= 5 &&
+                off > previous_offset;
   DateTime previous_local(previous_standard + previous_offset * 3600);
   uint8_t due = 0;
   for (uint8_t i = 0; i < 3; ++i) {
     const Alarm &a = s.alarm[i];
-    if (!a.enabled || fired_date[i] == day) continue;
-    if (!a.daily && (a.year != local.year() || a.month != local.month() || a.day != local.day())) continue;
+    if (!a.enabled || fired_date[i] == day)
+      continue;
+    if (!a.daily && (a.year != local.year() || a.month != local.month() || a.day != local.day()))
+      continue;
     uint16_t at = a.hour * 60 + a.minute;
     bool skipped = spring && date_key(previous_local) == day &&
                    at > previous_local.hour() * 60 + previous_local.minute() && at <= minute;
-    if (at == minute || skipped) { due |= 1 << i; fired_date[i] = day; }
+    if (at == minute || skipped) {
+      due |= 1 << i;
+      fired_date[i] = day;
+    }
   }
   previous_standard = stamp;
   previous_offset = off;
@@ -54,19 +61,20 @@ uint8_t AlarmSchedule::poll(const DateTime &standard, const Settings &s) {
   return due;
 }
 
-bool AlarmSchedule::next(const DateTime &standard, const Settings &s,
-                         DateTime &result, uint8_t &index) const {
+bool AlarmSchedule::next(const DateTime &standard, const Settings &s, DateTime &result,
+                         uint8_t &index) const {
   DateTime now = standard + TimeSpan(clock_offset(standard, s) * 3600);
   uint32_t best = UINT32_MAX;
   for (uint8_t i = 0; i < 3; ++i) {
     const Alarm &a = s.alarm[i];
-    if (!a.enabled) continue;
+    if (!a.enabled)
+      continue;
     for (uint8_t day = 0; day < (a.daily ? 2 : 1); ++day) {
-      DateTime candidate(a.daily ? now.year() : a.year,
-                         a.daily ? now.month() : a.month,
+      DateTime candidate(a.daily ? now.year() : a.year, a.daily ? now.month() : a.month,
                          a.daily ? now.day() : a.day, a.hour, a.minute, 0);
       candidate = candidate + TimeSpan(day * 86400);
-      if (fired_date[i] == date_key(candidate)) continue;
+      if (fired_date[i] == date_key(candidate))
+        continue;
       DateTime target;
       bool unique = local_to_standard(candidate, s, target);
       if (!unique && s.dst_auto) {
@@ -77,12 +85,15 @@ bool AlarmSchedule::next(const DateTime &standard, const Settings &s,
           // Fall fold: choose the earliest future occurrence if this alarm
           // has not fired today. Compare actual standard instants, not labels.
           DateTime first = candidate - TimeSpan(3600);
-          if (first.unixtime() >= standard.unixtime()) target = first;
+          if (first.unixtime() >= standard.unixtime())
+            target = first;
         }
       }
-      if (target.unixtime() < standard.unixtime() || target.unixtime() >= best) continue;
+      if (target.unixtime() < standard.unixtime() || target.unixtime() >= best)
+        continue;
       best = target.unixtime();
-      result = target + TimeSpan(clock_offset(target, s) * 3600); index = i;
+      result = target + TimeSpan(clock_offset(target, s) * 3600);
+      index = i;
     }
   }
   return best != UINT32_MAX;

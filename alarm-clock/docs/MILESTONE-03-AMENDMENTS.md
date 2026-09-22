@@ -37,8 +37,8 @@ The buzzer was previously reported as low resistance, consistent with an
 electromagnetic load rather than a piezo. The current screenshot shows direct
 GPIO13-to-buzzer wiring. **The previous assertion that GPIO_DRIVE_CAP_0 makes
 this connection safe is withdrawn.** Drive strength is not a verified load
-current limit or inductive protection. Firmware initially disabled output. At the user's explicit request,
-BUZZ_OUTPUT_ENABLED is now true for sound testing; that setting does not certify
+current limit or inductive protection. Firmware initially disabled output.
+BUZZ_OUTPUT_ENABLED is true for sound testing; that setting does not certify
 the electrical load. Verify the actual part/load and use an
 appropriate drive circuit, or a verified GPIO-compatible transducer, before
 considering the circuit electrically verified. This may require changing the kit-only/no-extra-parts constraint.

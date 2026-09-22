@@ -11,7 +11,15 @@ ambient brightness. External signals use J1; OLED and RTC use separate I²C buse
 
 ## Build and upload
 
-Use the existing `../.piovenv/bin/pio` environment. The pinned pioarduino platform
+Run these commands from the `alarm-clock` directory. For a fresh checkout,
+create a local PlatformIO environment once:
+
+```sh
+python3 -m venv ../.piovenv
+../.piovenv/bin/python -m pip install platformio
+```
+
+Reuse `../.piovenv/bin/pio` if the environment already exists. The pinned pioarduino platform
 uses Arduino core 3.3.12 / IDF 5.5.5; registry espressif32 core 2.x is incompatible.
 The N16R8 requires `qio_opi` (octal PSRAM). Libraries resolve to U8g2 2.36.18 and
 RTClib 2.1.4. The app currently uses the original 8 MB partition map within the
@@ -55,8 +63,8 @@ The LDR is 3V3 → LDR → GPIO4, using the internal digital pull-down. Preserve
 first ADC conversion before attenuation configuration and gpio_pulldown_en().
 Run wiring_report() before starting Wire/Wire1, because it reconfigures pins.
 
-**Buzzer:** output is now enabled at the user's explicit request for sound
-testing (`BUZZ_OUTPUT_ENABLED=true`). The low-impedance setting and weakest
+**Buzzer:** output is enabled for sound testing (`BUZZ_OUTPUT_ENABLED=true`).
+The low-impedance setting and weakest
 GPIO drive are retained. This is an output switch, not a certification of the
 direct-connected buzzer's electrical suitability. The earlier load/driver
 concern remains unresolved. Use an alarm's Sound → Test option for a bounded
@@ -169,6 +177,26 @@ Real ringing uses the full ramp. Settings changes that fail
 storage verification are reported instead of displaying Saved.
 
 ## Source layout
+
+C++ sources use the repository's `.clang-format` configuration (clang-format 20).
+From the repository root:
+
+```sh
+clang-format -i alarm-clock/src/*.cpp alarm-clock/src/*.h alarm-clock/tools/*.cpp pin-sweep/src/*.cpp
+```
+
+The brightness and screen-effect checks run locally without a connected board.
+From the `alarm-clock` directory:
+
+```sh
+c++ -std=c++11 -Wall -Wextra -Werror tools/test_brightness.cpp -o /tmp/test_brightness
+/tmp/test_brightness
+c++ -std=c++11 -Wall -Wextra -Werror tools/test_screen_effect.cpp -o /tmp/test_screen_effect
+/tmp/test_screen_effect
+```
+
+`artifacts/` contains historical bench evidence and a board recovery backup.
+New captures, build output, Python caches and local environments are ignored by Git.
 
 | Files | Responsibility |
 |---|---|
