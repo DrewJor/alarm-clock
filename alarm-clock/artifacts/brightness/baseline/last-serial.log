@@ -1,0 +1,69 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x2b (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x10cc
+load:0x403c8700,len:0xc2c
+load:0x403cb700,len:0x30b0
+entry 0x403c88b8
+
+[wire] pin               state       expected
+[wire] OLED SDA   (8)   HIGH       HIGH - module pull-up
+[wire] OLED SCL   (9)   HIGH       HIGH - module pull-up
+[wire] RTC SDA    (10)  HIGH       HIGH - module pull-up
+[wire] RTC SCL    (11)  HIGH       HIGH - module pull-up
+[wire] ENC SW     (12)  floating   floating or HIGH
+[wire] buzzer     (13)  LOW        LOW - coil to ground
+[wire] Back btn   (14)  floating   floating - NOT low
+[wire] ENC A      (15)  floating   floating or HIGH
+[wire] ENC B      (16)  floating   floating or HIGH
+[wire] Alarm btn  (17)  LOW        floating - NOT low
+[wire] Snooze btn (18)  LOW        floating - NOT low
+[wire] *** A BUTTON IS SHORTED TO GROUND AT REST ***
+[wire] A 4-leg tactile switch has its two legs on each side
+[wire] joined internally. Turn the switch a quarter turn so
+[wire] the joined pair straddles the trench, not the columns.
+[i2c] bus 0 (display)  0x3C   <- ok
+[i2c] bus 1 (RTC)      0x57 0x68   <- ok
+[test] calendar/DST: all passed
+[test] scheduler/save: 39 checks, 0 failures (mock backend; no RTC/NVS writes)
+[sound] output enabled; ready for user test
+[ldr] raw=891  plausible. Log dark / room / torch and set LDR_THRESH_LO and _HI from those.
+[test] alarm runtime using temporary settings
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 1 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 dismissed
+[alarm] 1 ringing (scheduled)
+[alarm] 1 dismissed
+[alarm] 2 ringing (scheduled)
+[alarm] length expired
+[alarm] 2 dismissed
+[alarm] 3 ringing (scheduled)
+[alarm] 3 snoozed 1 min (1 of 1)
+[alarm] pending snoozes cancelled
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 1 min (1 of 1)
+[test] alarm runtime: 12 checks, 0 failures (temporary RAM settings restored)
+[bench] status
+[status] available=1 valid=1 standard=1789868640 local=1789865040 dst=-1 ldr=1127 brightness=2 sound=1 light=1 ringing=0 pending=0 fmt24=1
+[alarm-status] 1 enabled=1 12:24 daily=1 snoozing=0
+[alarm-status] 2 enabled=0 07:00 daily=1 snoozing=0
+[alarm-status] 3 enabled=0 07:00 daily=1 snoozing=0
+[bench] select
+[input] ENC_PRESS
+[bench] cw
+[input] ENC_CW
+[bench] cw
+[input] ENC_CW
+[bench] select
+[input] ENC_PRESS
+[bench] frame
+[frame] 000004fc2424d800f020101020000010f4000000e0101010e000fc101010e0001010fc101000f0201010e000e05050502000205050509000205050509000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d0d0d1515151d0d0d1d0d0d0d0d0d0515151d0d0d0d5d5d5d3d0d1d0d0d0d1d0d0d0d0d1d1d0d1d0d0d0d1d0d0d1d1d1d0d0d1d1d1d1d0d0d1d1d1d1d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0ffffff007f7fffffbbd7efd7bbffff7f7f00ffffffffffffffff81f6f6f681ffc3bfbfdf83fffbfbc0bbbbffc7bbbbbbc7ff83fb87fb87ffdfababab87fffbfbc0bbbbffffbb82bfffffc7bbbbbbd7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff010101fd05050101010101010101010505fd0101010101010101f9112111f90101a1a1a1c101e1412121c101e1010101e10101a1a1a1c1010109f90101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101ffffffff00000007040400000000000000000004040700000000000000000300000003000182c2020300030000000300c1020201030001020202030000020302000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f7fff7f000000000000000000000000000000000000000000000000000000000000000000101f1000000000000000001f10101010000e1111110e000f100c100f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff00000000000000000000000000000000000000000000000000000000000000000084c2a2928c00000000000000fe040804fe0070a8a8a8100070888888fe000088fa80000078808040f800f808f008f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300
+[bench] ldr
+[ldr] raw=1128  plausible. Log dark / room / torch and set LDR_THRESH_LO and _HI from those.
+[bench] ldr
+[ldr] raw=1132  plausible. Log dark / room / torch and set LDR_THRESH_LO and _HI from those.
+[bench] ldr
+[ldr] raw=1133  plausible. Log dark / room / torch and set LDR_THRESH_LO and _HI from those.

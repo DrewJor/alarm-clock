@@ -1,0 +1,111 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x2b (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x10cc
+load:0x403c8700,len:0xc2c
+load:0x403cb700,len:0x30b0
+entry 0x403c88b8
+
+[wire] pin               state       expected
+[wire] OLED SDA   (8)   HIGH       HIGH - module pull-up
+[wire] OLED SCL   (9)   HIGH       HIGH - module pull-up
+[wire] RTC SDA    (10)  HIGH       HIGH - module pull-up
+[wire] RTC SCL    (11)  HIGH       HIGH - module pull-up
+[wire] ENC SW     (12)  floating   floating or HIGH
+[wire] buzzer     (13)  LOW        LOW - coil to ground
+[wire] Back btn   (14)  floating   floating - NOT low
+[wire] ENC A      (15)  floating   floating or HIGH
+[wire] ENC B      (16)  floating   floating or HIGH
+[wire] Snooze btn (18)  floating   floating - NOT low
+[i2c] bus 0 (display)  0x3C   <- ok
+[i2c] bus 1 (RTC)      0x57 0x68   <- ok
+[test] calendar/DST: all passed
+[test] scheduler/save: 54 checks, 0 failures (mock backend; no RTC/NVS writes)
+[sound] output enabled; ready for user test
+[ldr] raw=13  near zero - shine a light and re-check.
+[test] saved alarms/DST/format: 322 checks, 0 failures (loaded alarm copies; no RTC/NVS writes)
+[test] saved alarm 1 display: 2:24 PM / 14:24
+[test] saved alarm 2 display: 12:02 AM / 00:02
+[test] saved alarm 3 display: 7:00 AM / 07:00
+[test] alarm display formats: 34 checks, 0 failures (no setting changes)
+[test] alarm runtime using temporary settings
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 5 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 dismissed
+[alarm] 1 ringing (scheduled)
+[alarm] 1 dismissed
+[alarm] 2 ringing (scheduled)
+[alarm] length expired
+[alarm] 2 dismissed
+[alarm] 3 ringing (scheduled)
+[alarm] 3 snoozed 5 min (1 of 1)
+[alarm] pending snoozes cancelled
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 5 min (1 of 1)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 5 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 9 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 10 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 15 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 15 min (1 of 1)
+[alarm] 1 ringing (snooze)
+[alarm] 1 dismissed
+[alarm] 1 ringing (scheduled)
+[alarm] length expired
+[alarm] 1 dismissed
+[alarm] 1 ringing (scheduled)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 15 min (1 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (2 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (3 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (4 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (5 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (6 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (7 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (8 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (9 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 snoozed 15 min (10 of 10)
+[alarm] 1 ringing (snooze)
+[alarm] 1 ringing (scheduled)
+[alarm] 1 snoozed 15 min (1 of 3)
+[alarm] 1 ringing (snooze)
+[test] alarm runtime: 66 checks, 0 failures (temporary RAM settings restored)
+[bench] ring-test 1
+[alarm] 1 ringing (scheduled)
+[bench] snooze
+[input] SNOOZE
+[alarm] 1 snoozed 9 min (1 of 3)
+[bench] back
+[input] BACK
+[bench] frame
+[frame] 00000808f8080800f8202020c000e0000000e00000000000000010088848300000f00808f000100888483000e0504848800040404040400000f00808f0000010f800000040404040400000f00808f0000010f800000000000000000000000000000000000000000000000000000000f80808f00090284890000008f8080000000000000003000000030000000300010202010300000000008080820302020200000102020180828382020200010202020100000000000000000102020180808203020000000000000000000182828180000203020000000000000000000000000000000000000000000000000000000101010000000101000000000100000000000000000000000000000000000000000000000000383c1effffff000000000000f8fe7f070303030387fffe780000000080808000000000000000e0fcff3f030000000000000000f8fe7f070303030387fffe78000000000000000000f0484848f000f8102010f8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffff000000000000000000c0e0f87c3f0f070100000000000303030000000000e0feffbf8380f8f8f8808080000000000000c0e0f87c3f0f07010000000000000000000003000000030003000000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f7f7f000000000000787c7f7f7771707070707070000000000e0e0e00000000000303030303037f7f7f030303000000787c7f7f7771707070707070000000000000000000006c6c00000000427f400000003e41413e00000000000000000000000000000000000000000000000000000000000000009028489000e02020c000c02020c000c02020c00020a0602000c0a060400000000000000010f8000000b0b00000000000000000f008f000304848f00000b0b0000000f008f00000f008f00000000000000008f80000c0a060400040f048100020f8200000000000000000000000000000000000000000000080c0c080000000000001018000010000010000010100000001010080c1c18101000001010080800000000000010101000001010000008040008000000100008081818000000101000000000100e010101110101010101010109111119010111110101011101010101011111010101010101010101010101010e000000000101f1f3f3f1f1f1000000000111f10000000000000000000000000101f1f3f3f1f1f10000000111814130000000000000000000000001005100030001b000000000812120d000000000000000000007f80808080808080808080809f83839f808c9a9684809e82829c808e90909e808080808080808080808080807f
+[bench] stop
+[alarm] pending snoozes cancelled
+[bench] status
+[status] available=1 valid=1 standard=1767235331 local=1767228131 dst=-2 ldr=19 brightness=1 sound=1 light=1 ringing=0 pending=0 fmt24=0
+[brightness] saved_auto=1 active_auto=1 manual=3 applied=1 thresholds=500/1600 hysteresis=120
+[screen] pattern=0 inverted=0 contrast=0
+[buttons] snooze18=1 back14=1 select12=1 (1=released, 0=pressed)
+[alarm-status] 1 enabled=1 14:24 daily=1 snoozing=0 delay_min=9 remaining_ms=0 ring_min=5 max_snoozes=3
+[alarm-status] 2 enabled=1 00:02 daily=1 snoozing=0 delay_min=5 remaining_ms=0 ring_min=5 max_snoozes=3
+[alarm-status] 3 enabled=0 07:00 daily=1 snoozing=0 delay_min=9 remaining_ms=0 ring_min=5 max_snoozes=3
