@@ -1,4 +1,4 @@
-// EE 4953 Alarm Clock - hardware layer, diagnostics and alarm runtime
+// EE 4953 Alarm Clock - hardware layer and alarm runtime
 //
 // Arduino-ESP32 core 3.x (ESP-IDF 5 underneath, so driver/ calls are
 // available directly). Board: ESP32-S3-DevKitC-1 N16R8.
@@ -20,7 +20,6 @@
 #include "ui.h"
 #include "save.h"
 #include "scheduler.h"
-#include "selftest.h"
 #include "brightness.h"
 #include "screen_effect.h"
 
@@ -432,11 +431,6 @@ static void service_due_alarms(uint32_t now) {
   }
 }
 
-static void cancel_snoozes() {
-  for (uint8_t i = 0; i < 3; ++i)
-    s_snoozing[i] = false;
-  Serial.println("[alarm] pending snoozes cancelled");
-}
 static bool alarm_input(InputEvent ev) {
   if (ev == EV_SNOOZE_PRESS || ev == EV_SNOOZE_HOLD) {
     if (s_ringing && !hw_alarm_snooze()) {
@@ -463,227 +457,10 @@ static bool alarm_timeout(uint32_t now) {
   }
   return false;
 }
-#if SELFTEST_RULES
-static void runtime_selftest() {
-  Serial.println("[test] alarm runtime using temporary settings");
-  Settings saved = cfg;
-  settings_defaults(cfg);
-  for (auto &a : cfg.alarm) {
-    a.enabled = true;
-    a.snooze_max = 1;
-    a.snooze_min = SNOOZE_DELAY_MIN;
-    a.length_min = 1;
-  }
-  int checks = 0, failed = 0;
-  auto check = [&](bool ok, const char *name) {
-    ++checks;
-    if (!ok) {
-      ++failed;
-      Serial.printf("[test] FAIL %s\n", name);
-    }
-  };
-  alarm_start(0, false);
-  check(s_ringing && s_ring_idx == 0, "alarm starts");
-  check(hw_alarm_snooze() && !s_ringing && s_snoozing[0], "snooze silences");
-  service_due_alarms(millis());
-  check(!s_ringing, "snooze not early");
-  s_snz_due[0] = millis();
-  service_due_alarms(millis());
-  check(s_ringing && s_snz_used[0] == 1, "snooze rerings retaining count");
-  check(!hw_alarm_snooze() && s_ringing, "snooze max refuses without silencing");
-  hw_alarm_dismiss();
-  check(!s_ringing && !s_snoozing[0], "dismiss clears session");
-  s_pending_alarms = 7;
-  service_due_alarms(millis());
-  check(s_ring_idx == 0 && s_pending_alarms == 6, "simultaneous queue starts first");
-  hw_alarm_dismiss();
-  service_due_alarms(millis());
-  check(s_ring_idx == 1 && s_pending_alarms == 4, "simultaneous queue starts second");
-  s_ring_ms = millis() - 60000UL;
-  check(alarm_timeout(millis()) && !s_ringing, "ring length auto dismisses");
-  service_due_alarms(millis());
-  check(s_ring_idx == 2 && s_pending_alarms == 0, "simultaneous queue starts third");
-  hw_alarm_snooze();
-  cancel_snoozes();
-  check(!s_snoozing[2], "explicit bench cleanup cancels waiting session");
-  alarm_start(0, false);
-  hw_alarm_snooze();
-  cfg.alarm[0].enabled = false;
-  service_due_alarms(millis());
-  check(!s_snoozing[0], "disabled alarm cancels snooze");
-  for (uint8_t minutes : {uint8_t(5), uint8_t(9), uint8_t(10), uint8_t(15)}) {
-    cfg.alarm[0].enabled = true;
-    cfg.alarm[0].snooze_min = minutes;
-    alarm_start(0, false);
-    uint32_t started = millis();
-    check(hw_alarm_snooze(), "duration check enters snooze");
-    uint32_t finished = millis();
-    uint32_t expected = uint32_t(minutes) * 60000UL;
-    uint32_t scheduled = s_snz_due[0] - started;
-    check(scheduled >= expected && scheduled <= expected + (finished - started),
-          "snooze deadline matches selected 5, 9, 10 or 15 minutes");
-    service_due_alarms(s_snz_due[0] - 1);
-    check(!s_ringing, "snooze does not ring before exact deadline");
-    service_due_alarms(s_snz_due[0]);
-    check(s_ringing && s_ring_idx == 0, "snooze rings at exact deadline without extra minute");
-    alarm_silence();
-  }
-  cfg.alarm[0].length_min = 0;
-  alarm_start(0, false);
-  check(!alarm_timeout(s_ring_ms) && s_ringing, "indefinite alarm does not expire immediately");
-  check(!alarm_timeout(s_ring_ms + 24UL * 3600000UL) && s_ringing,
-        "indefinite alarm remains active after a day");
-  check(hw_alarm_snooze() && !s_ringing, "indefinite alarm can snooze");
-  service_due_alarms(s_snz_due[0]);
-  check(s_ringing && !alarm_timeout(s_ring_ms + 3600000UL),
-        "indefinite alarm remains indefinite after snooze");
-  hw_alarm_dismiss();
-  check(!s_ringing && !s_snoozing[0], "indefinite alarm can be dismissed");
-  cfg.alarm[0].length_min = 1;
-  alarm_start(0, false);
-  check(!alarm_timeout(s_ring_ms + 59999UL) && s_ringing,
-        "finite alarm stays active before its deadline");
-  check(alarm_timeout(s_ring_ms + 60000UL) && !s_ringing, "finite alarm still expires on time");
-  cfg.alarm[0].snooze_max = 0;
-  alarm_start(0, false);
-  check(!hw_alarm_snooze() && s_ringing && !s_snoozing[0] && s_snz_used[0] == 0,
-        "zero max snoozes refuses snooze and keeps ringing");
-  alarm_silence();
-  cfg.alarm[0].snooze_max = 10;
-  alarm_start(0, false);
-  for (uint8_t count = 1; count <= 10; ++count) {
-    check(hw_alarm_snooze() && s_snz_used[0] == count, "each of ten snoozes is allowed");
-    service_due_alarms(s_snz_due[0]);
-    check(s_ringing && s_snz_used[0] == count, "snooze count survives re-ring");
-  }
-  check(!hw_alarm_snooze() && s_ringing && !s_snoozing[0] && s_snz_used[0] == 10,
-        "eleventh snooze is refused");
-  alarm_silence();
-  cfg.alarm[0].daily = false;
-  cfg.alarm[0].snooze_max = 3;
-  alarm_start(0, false);
-  check(alarm_input(EV_SNOOZE_HOLD) && !s_ringing && s_snoozing[0] && cfg.alarm[0].enabled,
-        "held snooze delays even a dated alarm without disabling it");
-  uint32_t due = s_snz_due[0], seconds = 0;
-  alarm_input(EV_SNOOZE_HOLD);
-  alarm_input(EV_SNOOZE_PRESS);
-  check(s_snoozing[0] && s_snz_due[0] == due && s_snz_used[0] == 1 && cfg.alarm[0].enabled,
-        "repeat snooze input neither cancels nor extends countdown");
-  check(snooze_remaining(0, due - 60000, seconds) && seconds == 60, "countdown exact minute");
-  check(snooze_remaining(0, due - 59999, seconds) && seconds == 60, "countdown rounds up");
-  check(snooze_remaining(0, due - 1, seconds) && seconds == 1, "countdown final second");
-  check(snooze_remaining(0, due, seconds) && seconds == 0, "countdown reaches zero");
-  check(snooze_remaining(0, due + 1, seconds) && seconds == 0, "countdown never underflows");
-  s_snz_due[0] = 500;
-  check(snooze_remaining(0, UINT32_MAX - 499, seconds) && seconds == 1,
-        "countdown across millis wrap");
-  s_snz_due[0] = due;
-  service_due_alarms(due);
-  check(s_ringing && cfg.alarm[0].enabled && !hw_snooze_remaining(0, seconds),
-        "held snooze rerings and removes countdown");
-  cfg.alarm[0].daily = true;
-  alarm_silence();
-  s_pending_alarms = 0;
-  for (uint8_t i = 0; i < 3; ++i) {
-    s_snoozing[i] = false;
-    s_snz_used[i] = 0;
-    s_snz_due[i] = 0;
-  }
-  cfg = saved;
-  Serial.printf("[test] alarm runtime: %d checks, %d failures (temporary RAM settings restored)\n",
-                checks, failed);
-}
-#endif
-
-// Boot diagnostics
-//
-// Every signal pin is probed against the chip's own internal pull, so
-// the board reports what is actually connected rather than what was
-// meant to be. "Expected" is what a correct, un-pressed board shows.
-struct PinCheck {
-  uint8_t pin;
-  const char *name;
-  const char *expect;
-};
-static const PinCheck CHECKS[] = {
-    {PIN_OLED_SDA, "OLED SDA   (8) ", "HIGH - module pull-up"},
-    {PIN_OLED_SCL, "OLED SCL   (9) ", "HIGH - module pull-up"},
-    {PIN_RTC_SDA, "RTC SDA    (10)", "HIGH - module pull-up"},
-    {PIN_RTC_SCL, "RTC SCL    (11)", "HIGH - module pull-up"},
-    {PIN_ENC_SW, "ENC SW     (12)", "floating or HIGH"},
-    {PIN_BUZZER, "buzzer     (13)", "LOW - coil to ground"},
-    {PIN_BTN_BACK, "Back btn   (14)", "floating - NOT low"},
-    {PIN_ENC_A, "ENC A      (15)", "floating or HIGH"},
-    {PIN_ENC_B, "ENC B      (16)", "floating or HIGH"},
-    {PIN_BTN_SNOOZE, "Snooze btn (18)", "floating - NOT low"},
-};
-
-static void wiring_report() {
-  Serial.println("\n[wire] pin               state       expected");
-  bool shorted = false;
-  for (auto &c : CHECKS) {
-    pinMode(c.pin, INPUT_PULLUP);
-    delay(4);
-    int up = digitalRead(c.pin);
-    pinMode(c.pin, INPUT_PULLDOWN);
-    delay(4);
-    int dn = digitalRead(c.pin);
-    pinMode(c.pin, INPUT_PULLUP);
-    const char *st = (up == 1 && dn == 0) ? "floating " : (up == 0) ? "LOW      " : "HIGH     ";
-    Serial.printf("[wire] %s  %s  %s\n", c.name, st, c.expect);
-    if (up == 0 && (c.pin == PIN_BTN_BACK || c.pin == PIN_BTN_SNOOZE || c.pin == PIN_ENC_SW))
-      shorted = true;
-  }
-  if (shorted) {
-    Serial.println("[wire] A button input is LOW: held down or connected to ground.");
-    Serial.println("[wire] If released, check that the switch opens the signal-to-ground path.");
-    Serial.println("[wire] A 4-leg tactile switch has its two legs on each side");
-    Serial.println("[wire] joined internally. Turn the switch a quarter turn so");
-    Serial.println("[wire] the joined pair straddles the trench, not the columns.");
-  }
-}
-
-static void i2c_report() {
-  struct {
-    TwoWire *w;
-    const char *name;
-    uint8_t expect;
-  } bus[] = {
-      {&Wire, "bus 0 (display)", OLED_ADDR},
-      {&Wire1, "bus 1 (RTC)", RTC_ADDR},
-  };
-  for (auto &b : bus) {
-    Serial.printf("[i2c] %-16s", b.name);
-    bool found = false;
-    for (uint8_t a = 1; a < 127; a++) {
-      b.w->beginTransmission(a);
-      if (b.w->endTransmission() == 0) {
-        Serial.printf(" 0x%02X", a);
-        if (a == b.expect)
-          found = true;
-      }
-    }
-    Serial.println(found ? "   <- ok" : "   <- NOTHING AT THE EXPECTED ADDRESS");
-  }
-}
-
-static void ldr_self_test() {
-  uint16_t v = hw_ldr_raw();
-  Serial.printf("[ldr] raw=%u  ", v);
-  if (v > 4000)
-    Serial.println("PINNED HIGH - pull-down is not engaging.");
-  else if (v < 30)
-    Serial.println("near zero - shine a light and re-check.");
-  else
-    Serial.println("plausible. Log dark / room / torch and set "
-                   "LDR_THRESH_LO and _HI from those.");
-}
 // setup
 void setup() {
   Serial.begin(115200);
   delay(200);
-
-  wiring_report(); // probes GPIO8-11, so it must run BEFORE the buses start
 
   Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL, OLED_HZ); // bus 0: display
   Wire1.begin(PIN_RTC_SDA, PIN_RTC_SCL, RTC_HZ);
@@ -702,24 +479,13 @@ void setup() {
   if (s_rtc_ok && !s_clock_valid)
     Serial.println("[rtc] oscillator stopped - clock needs setting");
 
-  i2c_report();
-#if SELFTEST_RULES
-  settings_selftest();
-  firmware_selftest();
-#endif
   buzzer_begin();
   rgbLedWrite(PIN_RGB_LED, 0, 0, 0);
   light_off();
   ldr_begin();
-  ldr_self_test();
   input_begin();
   settings_load();
   ui_begin();
-#if SELFTEST_RULES
-  saved_alarm_selftest(cfg);
-  ui_format_selftest();
-  runtime_selftest();
-#endif
 
   hw_brightness_apply(cfg.auto_bright ? ldr_level(hw_ldr_raw()) : cfg.manual_level,
                       cfg.auto_bright);
@@ -728,104 +494,6 @@ void setup() {
     s_dst_off = dst_offset_hours(s_standard);
   } // so the first frame is not 2000-01-01
 }
-
-#if BENCH_SERIAL
-static void bench_frame() {
-  Serial.print("[frame] ");
-  const uint8_t *buffer = oled.getBufferPtr();
-  for (int i = 0; i < 1024; ++i)
-    Serial.printf("%02x", buffer[i]);
-  Serial.println();
-}
-static InputEvent bench_poll() {
-  static char line[40];
-  static uint8_t used = 0;
-  while (Serial.available()) {
-    char c = Serial.read();
-    if (c == '\r')
-      continue;
-    if (c != '\n') {
-      if (used < sizeof(line) - 1)
-        line[used++] = c;
-      continue;
-    }
-    line[used] = 0;
-    used = 0;
-    Serial.printf("[bench] %s\n", line);
-    struct {
-      const char *name;
-      InputEvent event;
-    } events[] = {{"cw", EV_ENC_CW},
-                  {"ccw", EV_ENC_CCW},
-                  {"select", EV_ENC_PRESS},
-                  {"back", EV_BACK_PRESS},
-                  {"alarm", EV_ALARM_PRESS},
-                  {"snooze", EV_SNOOZE_PRESS},
-                  {"holdsnooze", EV_SNOOZE_HOLD},
-                  {"holdback", EV_BACK_HOLD}};
-    for (auto &e : events)
-      if (!strcmp(line, e.name))
-        return e.event;
-    if (!strcmp(line, "status")) {
-      Serial.printf("[status] available=%d valid=%d standard=%lu local=%lu dst=%d ldr=%u "
-                    "brightness=%u sound=%d light=%d ringing=%d pending=%u fmt24=%d\n",
-                    s_rtc_ok, s_clock_valid, (unsigned long)s_standard.unixtime(),
-                    (unsigned long)s_local.unixtime(), s_dst_off, hw_ldr_raw(), s_level, s_sound_ok,
-                    s_light_ok, s_ringing, s_pending_alarms, cfg.fmt24h);
-      bool automatic = cfg.auto_bright;
-      uint8_t manual_level = cfg.manual_level;
-      ui_brightness_mode(automatic, manual_level);
-      Serial.printf("[brightness] saved_auto=%d active_auto=%d manual=%u applied=%u "
-                    "thresholds=%u/%u hysteresis=%u\n",
-                    cfg.auto_bright, automatic, manual_level, s_level, LDR_THRESH_LO, LDR_THRESH_HI,
-                    LDR_HYSTERESIS);
-      Serial.printf("[screen] pattern=%u inverted=%d contrast=%d\n", s_screen_pattern,
-                    s_screen_pattern && screen_effect(s_screen_pattern, s_screen_elapsed).inverted,
-                    s_oled_contrast);
-      Serial.printf("[buttons] snooze18=%d back14=%d select12=%d (1=released, 0=pressed)\n",
-                    digitalRead(PIN_BTN_SNOOZE), digitalRead(PIN_BTN_BACK),
-                    digitalRead(PIN_ENC_SW));
-      for (uint8_t i = 0; i < 3; ++i) {
-        int32_t remaining = s_snoozing[i] ? int32_t(s_snz_due[i] - millis()) : 0;
-        Serial.printf("[alarm-status] %u enabled=%d %02u:%02u daily=%d snoozing=%d delay_min=%u "
-                      "remaining_ms=%lu ring_min=%u max_snoozes=%u\n",
-                      i + 1, cfg.alarm[i].enabled, cfg.alarm[i].hour, cfg.alarm[i].minute,
-                      cfg.alarm[i].daily, s_snoozing[i], cfg.alarm[i].snooze_min,
-                      (unsigned long)(remaining > 0 ? remaining : 0), cfg.alarm[i].length_min,
-                      cfg.alarm[i].snooze_max);
-      }
-    } else if (!strcmp(line, "stop")) {
-      hw_alarm_dismiss();
-      cancel_snoozes();
-      hw_test_stop();
-    } else if (!strcmp(line, "ldr"))
-      ldr_self_test();
-    else if (!strncmp(line, "ring-test ", 10) && !s_ringing) {
-      int i = atoi(line + 10);
-      if (i >= 1 && i <= 3)
-        alarm_start(i - 1, false);
-    } else if (!strncmp(line, "home-preview ", 13)) {
-      unsigned mask, format;
-      if (sscanf(line + 13, "%u %u", &mask, &format) == 2 && mask <= 7 &&
-          (format == 12 || format == 24)) {
-        ui_home_preview(mask, format == 24);
-        bench_frame();
-      }
-    } else if (!strcmp(line, "frame")) {
-      bench_frame();
-    } else if (!strncmp(line, "sound ", 6) && !s_ringing) {
-      if (!hw_sound_test(atoi(line + 6)))
-        ui_output_error(true);
-    } else if (!strncmp(line, "light ", 6) && !s_ringing) {
-      if (!hw_light_test(atoi(line + 6)))
-        ui_output_error(false);
-    } else
-      Serial.println(
-          "[bench] status frame ldr cw ccw select back alarm snooze stop sound 1..3 light 1..3");
-  }
-  return EV_NONE;
-}
-#endif
 
 // loop
 void loop() {
@@ -851,14 +519,7 @@ void loop() {
 
   // input
   InputEvent ev = input_poll();
-#if BENCH_SERIAL
-  if (ev == EV_NONE)
-    ev = bench_poll();
-#endif
   if (ev != EV_NONE) {
-#if LOG_INPUT
-    Serial.printf("[input] %s\n", input_name(ev));
-#endif
     if (!alarm_input(ev))
       ui_event(ev);
   }

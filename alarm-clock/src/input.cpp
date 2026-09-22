@@ -152,30 +152,3 @@ InputEvent input_poll() {
   }
   return EV_NONE;
 }
-
-const char *input_name(InputEvent e) {
-  switch (e) {
-  case EV_ENC_CW:
-    return "ENC_CW";
-  case EV_ENC_CCW:
-    return "ENC_CCW";
-  case EV_ENC_PRESS:
-    return "ENC_PRESS";
-  case EV_ENC_HOLD:
-    return "ENC_HOLD";
-  case EV_ALARM_PRESS:
-    return "ALARM";
-  case EV_ALARM_HOLD:
-    return "ALARM_HOLD";
-  case EV_SNOOZE_PRESS:
-    return "SNOOZE";
-  case EV_SNOOZE_HOLD:
-    return "SNOOZE_HOLD";
-  case EV_BACK_PRESS:
-    return "BACK";
-  case EV_BACK_HOLD:
-    return "BACK_HOLD";
-  default:
-    return "NONE";
-  }
-}

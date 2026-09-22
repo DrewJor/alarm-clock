@@ -572,7 +572,7 @@ void ui_event(InputEvent e) {
 
   // Any press clears a notice early.
   if (scr == SCR_MSG) {
-    if (e == EV_ENC_PRESS || e == EV_BACK_PRESS || e == EV_ALARM_PRESS) {
+    if (e == EV_ENC_PRESS || e == EV_BACK_PRESS) {
       scr = msg_next;
       cur = msg_next_cur;
       msg_active = false;
@@ -583,15 +583,6 @@ void ui_event(InputEvent e) {
   // Saving continues behind alarm overlays and cannot be cancelled.
   if (scr == SCR_TD_SAVING)
     return;
-
-  // The serial Alarm diagnostic is a shortcut to the alarm list. It is
-  // deliberately limited to Home and the main menu: anywhere else there
-  // may be an open draft, and a shortcut must not silently discard one.
-  if (e == EV_ALARM_PRESS && (scr == SCR_HOME || scr == SCR_MENU)) {
-    go_home();
-    go(SCR_AL_LIST);
-    return;
-  }
 
   switch (scr) {
 
@@ -1263,18 +1254,6 @@ static void draw_home(const DateTime &t, const Settings &settings = cfg) {
   draw_home_choices(settings);
 }
 
-#if BENCH_SERIAL
-void ui_home_preview(uint8_t enabled_mask, bool fmt24h) {
-  Settings preview = cfg;
-  for (uint8_t i = 0; i < 3; ++i)
-    preview.alarm[i].enabled = (enabled_mask & (1 << i)) != 0;
-  preview.fmt24h = fmt24h;
-  oled.clearBuffer();
-  oled.setDrawColor(1);
-  draw_home(to_local(hw_rtc_read()), preview);
-}
-#endif
-
 // 4 / 10. time field list
 static void draw_time_fields(const char *t, uint8_t hh, uint8_t mm, const uint8_t *ss, bool f24,
                              uint8_t nf, const char *extra) {
@@ -1615,42 +1594,3 @@ void ui_begin() {
   overlay = false;
   snooze_countdown = false;
 }
-
-#if SELFTEST_RULES
-void ui_format_selftest() {
-  int checks = 0, failed = 0;
-  auto check = [&](bool ok, const char *name) {
-    ++checks;
-    if (!ok) {
-      ++failed;
-      Serial.printf("[test] FAIL %s\n", name);
-    }
-  };
-  struct Example {
-    uint8_t hour, minute;
-    const char *f12, *f24;
-  };
-  const Example examples[] = {{0, 0, "12:00 AM", "00:00"},
-                              {12, 0, "12:00 PM", "12:00"},
-                              {7, 5, "7:05 AM", "07:05"},
-                              {19, 5, "7:05 PM", "19:05"},
-                              {23, 59, "11:59 PM", "23:59"}};
-  for (const auto &example : examples) {
-    char b[16];
-    fmt_hm(b, sizeof(b), example.hour, example.minute, false);
-    check(strcmp(b, example.f12) == 0, "12-hour alarm label including AM/PM");
-    fmt_hm(b, sizeof(b), example.hour, example.minute, true);
-    check(strcmp(b, example.f24) == 0, "24-hour alarm label");
-  }
-  for (uint8_t h = 0; h < 24; ++h)
-    check(hour24(hour12(h), is_pm(h)) == h, "every alarm hour round-trips through 12-hour editor");
-  for (uint8_t i = 0; i < 3; ++i) {
-    char f12[16], f24[16];
-    fmt_hm(f12, sizeof(f12), cfg.alarm[i].hour, cfg.alarm[i].minute, false);
-    fmt_hm(f24, sizeof(f24), cfg.alarm[i].hour, cfg.alarm[i].minute, true);
-    Serial.printf("[test] saved alarm %u display: %s / %s\n", i + 1, f12, f24);
-  }
-  Serial.printf("[test] alarm display formats: %d checks, %d failures (no setting changes)\n",
-                checks, failed);
-}
-#endif

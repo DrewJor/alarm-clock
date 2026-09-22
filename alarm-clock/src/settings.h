@@ -51,6 +51,3 @@ bool us_dst_active(const DateTime &standard);
 int8_t dst_offset_hours(const DateTime &standard);
 DateTime to_local(const DateTime &standard);
 
-#if SELFTEST_RULES
-void settings_selftest(); // prints a pass/fail line at boot
-#endif

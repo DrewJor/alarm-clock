@@ -8,8 +8,6 @@ enum InputEvent : uint8_t {
   EV_ENC_CCW, // one per detent
   EV_ENC_PRESS,
   EV_ENC_HOLD, // confirm / exit
-  EV_ALARM_PRESS,
-  EV_ALARM_HOLD, // diagnostic shortcut only; physical GPIO17 button removed
   EV_SNOOZE_PRESS,
   EV_SNOOZE_HOLD,
   EV_BACK_PRESS,
@@ -18,4 +16,3 @@ enum InputEvent : uint8_t {
 
 void input_begin();
 InputEvent input_poll(); // call every loop; returns EV_NONE when idle
-const char *input_name(InputEvent e);

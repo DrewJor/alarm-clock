@@ -3,19 +3,19 @@
 // EE 4953 Alarm Clock - hardware configuration
 // ESP32-S3-DevKitC-1 (WROOM-1 N16R8)
 //
-// All signals use header J1 (back), tapped from row j.
-// The front header J3 is unused. Hole numbers refer to the breadboard
+// All signals use header J1 (row b), tapped from row a.
+// Header J3 (row i) is unused. Hole numbers refer to the breadboard
 // layout in the hardware design document.
 
 // I2C bus 0 : SSD1306 display
-#define PIN_OLED_SDA 8 // j11
-#define PIN_OLED_SCL 9 // j8
+#define PIN_OLED_SDA 8 // a53
+#define PIN_OLED_SCL 9 // a56
 #define OLED_ADDR 0x3C // a few modules are 0x3D - check with a scan
 #define OLED_HZ 400000
 
 // RTC: DS3231 on a separate I2C bus
-#define PIN_RTC_SDA 10 // j7
-#define PIN_RTC_SCL 11 // j6
+#define PIN_RTC_SDA 10 // a57
+#define PIN_RTC_SCL 11 // a58
 #define RTC_ADDR 0x68
 #define EEPROM_ADDR 0x57 // AT24C32 on the same module, unused
 #define RTC_HZ 400000
@@ -24,19 +24,19 @@
 // software timer (see TICK_MS), not a hardware interrupt.
 
 // EC11 rotary encoder
-#define PIN_ENC_A 15            // j15
-#define PIN_ENC_B 16            // j14
-#define PIN_ENC_SW 12           // j5
+#define PIN_ENC_A 15            // a49
+#define PIN_ENC_B 16            // a50
+#define PIN_ENC_SW 12           // a59
 #define ENC_GLITCH_NS 1000      // PCNT hardware filter: rejects contact bounce
 #define ENC_COUNTS_PER_DETENT 4 // 2 PCNT channels = 4x decoding
 
 // Buttons (active LOW, internal pull-ups)
 // GPIO17's former Alarm button has been removed; leave that input unused.
-#define PIN_BTN_SNOOZE 18 // j12 - button immediately left of OLED; snooze while ringing
-#define PIN_BTN_BACK 14   // j3  - back one screen; Stop while ringing
+#define PIN_BTN_SNOOZE 18 // a52 - button beside the OLED; snooze while ringing
+#define PIN_BTN_BACK 14   // a61 - back one screen; Stop while ringing
 
 // Passive buzzer
-#define PIN_BUZZER 13 // j4
+#define PIN_BUZZER 13 // a60
 #define BUZZ_RES_BITS 10
 #define BUZZ_DUTY 512 // 50% of 2^10
 
@@ -45,7 +45,7 @@
 #define BUZZ_OUTPUT_ENABLED true
 
 // Photoresistor
-#define PIN_LDR 4 // j19, ADC1_3
+#define PIN_LDR 4 // a45, ADC1_3
 
 // Wired 3V3 -> LDR -> GPIO4, with the chip's INTERNAL PULL-DOWN as the
 // lower leg. There is no external resistor. Brighter light reads HIGHER.
@@ -74,16 +74,6 @@
 #define ALARM_LEN_MIN 0 // 0 = indefinite; otherwise minutes before stopping
 #define ALARM_LEN_MAX 60
 
-// Run calendar, scheduler, save, UI and alarm runtime checks at boot.
-#define SELFTEST_RULES 1
-
-// Log physical and injected input events.
-#define LOG_INPUT 1
-
 // UI timing
 #define TEST_MS 4000 // how long a sound / light preview runs
 #define MSG_MS 1600  // how long a confirmation message stays up
-
-// Local USB bench controls: status, frame, cw, ccw, select, back, alarm,
-// snooze, stop, ldr, sound N, light N. No clock/settings backdoor.
-#define BENCH_SERIAL 1

@@ -17,6 +17,3 @@ void ui_snooze_refused();
 void ui_snoozed(); // show live countdown without losing menu drafts
 void ui_output_error(bool sound);
 void ui_brightness_mode(bool &automatic, uint8_t &level);
-void ui_format_selftest();
-void ui_home_preview(uint8_t enabled_mask,
-                     bool fmt24h); // bench framebuffer only; no settings changes
